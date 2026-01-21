@@ -1,17 +1,35 @@
 "use client"
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+  type DragEvent,
+  type ChangeEvent,
+  type ReactNode,
+  type HTMLAttributes,
+} from "react"
 import { Upload, X, FileIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface FileUploadProps {
-  accept?: string
-  onChange?: (file: File | null) => void
-  className?: string
-  children?: React.ReactNode
+interface FileUploadContextValue {
+  file: File | null
+  preview: string | null
+  isDragging: boolean
+  clear: () => void
+  openLightbox: () => void
 }
 
-function FileUpload({ accept = "*", onChange, className, children }: FileUploadProps) {
+const FileUploadContext = createContext<FileUploadContextValue | null>(null)
+
+interface FileUploadProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
+  accept?: string
+  onChange?: (file: File | null) => void
+}
+
+function FileUpload({ accept = "*", onChange, className, children, ...props }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -19,13 +37,16 @@ function FileUpload({ accept = "*", onChange, className, children }: FileUploadP
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = (f: File | null) => {
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview)
     setFile(f)
     onChange?.(f)
-
-    if (f?.type.startsWith("image/")) {
+    if (!f) return setPreview(null)
+    if (f.type.startsWith("image/")) {
       const reader = new FileReader()
       reader.onload = (e) => setPreview(e.target?.result as string)
       reader.readAsDataURL(f)
+    } else if (f.type === "application/pdf") {
+      setPreview(URL.createObjectURL(f))
     } else {
       setPreview(null)
     }
@@ -36,30 +57,29 @@ function FileUpload({ accept = "*", onChange, className, children }: FileUploadP
     if (inputRef.current) inputRef.current.value = ""
   }
 
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const f = e.dataTransfer.files[0]
-    if (f) handleFile(f)
-  }
-
-  const onDragOver = (e: DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
   return (
-    <>
+    <FileUploadContext.Provider
+      value={{ file, preview, isDragging, clear, openLightbox: () => setLightbox(true) }}
+    >
       <div
         onClick={() => inputRef.current?.click()}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
+        onDrop={(e: DragEvent) => {
+          e.preventDefault()
+          setIsDragging(false)
+          const f = e.dataTransfer.files[0]
+          if (f) handleFile(f)
+        }}
+        onDragOver={(e: DragEvent) => {
+          e.preventDefault()
+          setIsDragging(true)
+        }}
         onDragLeave={() => setIsDragging(false)}
         className={cn(
           "relative flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
           isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50",
           className
         )}
+        {...props}
       >
         <input
           ref={inputRef}
@@ -71,46 +91,49 @@ function FileUpload({ accept = "*", onChange, className, children }: FileUploadP
           }}
           className="hidden"
         />
-
-        {file ? (
-          <FilePreview
-            file={file}
-            preview={preview}
-            onClear={clear}
-            onImageClick={() => setLightbox(true)}
-          />
-        ) : (
-          children ?? <DefaultPlaceholder />
-        )}
+        {children}
       </div>
 
       {lightbox && preview && (
-        <Lightbox src={preview} onClose={() => setLightbox(false)} />
+        <Lightbox src={preview} isPdf={file?.type === "application/pdf"} onClose={() => setLightbox(false)} />
       )}
-    </>
+    </FileUploadContext.Provider>
   )
 }
 
-function FilePreview({
-  file,
-  preview,
-  onClear,
-  onImageClick,
-}: {
-  file: File
-  preview: string | null
-  onClear: () => void
-  onImageClick: () => void
-}) {
+function FileUploadContent({ children }: { children?: ReactNode }) {
+  const ctx = useContext(FileUploadContext)
+  if (!ctx) throw new Error("FileUploadContent must be used within FileUpload")
+
+  const { file, preview, clear, openLightbox } = ctx
+
+  if (!file) {
+    return (
+      children ?? (
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Upload className="size-8" />
+          <span className="text-sm">Click or drag file to upload</span>
+        </div>
+      )
+    )
+  }
+
+  const isImage = file.type.startsWith("image/")
+  const isPdf = file.type === "application/pdf"
+
   return (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
-      {preview ? (
+      {isImage && preview ? (
         <img
           src={preview}
           alt="Preview"
           className="max-h-40 cursor-zoom-in rounded-md object-contain"
-          onClick={onImageClick}
+          onClick={openLightbox}
         />
+      ) : isPdf && preview ? (
+        <div className="relative h-40 w-64 cursor-zoom-in" onClick={openLightbox}>
+          <iframe src={preview} title="PDF Preview" className="pointer-events-none h-full w-full rounded-md border" />
+        </div>
       ) : (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <FileIcon className="size-4" />
@@ -120,7 +143,7 @@ function FilePreview({
       <button
         onClick={(e) => {
           e.stopPropagation()
-          onClear()
+          clear()
         }}
         className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-destructive text-destructive-foreground"
       >
@@ -130,26 +153,27 @@ function FilePreview({
   )
 }
 
-function DefaultPlaceholder() {
-  return (
-    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-      <Upload className="size-8" />
-      <span className="text-sm">Click or drag file to upload</span>
-    </div>
-  )
-}
+function Lightbox({ src, isPdf, onClose }: { src: string; isPdf?: boolean; onClose: () => void }) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [onClose])
 
-function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <img
-        src={src}
-        alt="Full preview"
-        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-      />
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      {isPdf ? (
+        <iframe
+          src={src}
+          title="PDF Preview"
+          className="h-[90vh] w-[90vw] rounded-lg"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <img src={src} alt="Full preview" className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+      )}
       <button
         onClick={onClose}
         className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
@@ -160,4 +184,4 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   )
 }
 
-export { FileUpload }
+export { FileUpload, FileUploadContent }

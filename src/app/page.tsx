@@ -1,8 +1,6 @@
 "use client"
 
-import {
-  FileUpload,
-} from "@/components/fileupload"
+import { FileUpload, FileUploadContent } from "@/components/fileupload"
 
 export default function Home() {
   return (
@@ -12,10 +10,12 @@ export default function Home() {
         <p className="text-muted-foreground">A simple file upload component for React.</p>
       </div>
       <div className="flex flex-col items-center gap-2">
-      <FileUpload accept="image/*" onChange={(f) => console.log(f)} className="">
-        <p className="text-sm text-muted-foreground">
-          Drop file here or <span className="text-primary underline">browse</span>
-        </p>
+      <FileUpload onChange={(f) => console.log(f)}>
+        <FileUploadContent>
+          <p className="text-sm text-muted-foreground">
+            Drop file here or <span className="text-primary underline">browse</span>
+          </p>
+        </FileUploadContent>
       </FileUpload>
       </div>
     </div>
