@@ -1,0 +1,24 @@
+{
+    "$schema": "https://ui.shadcn.com/schema/registry-items.json",
+    "name": "fileupload",
+    "title": "fileupload",
+    "homepage": "https://github.com/sachigoyal/fileupload",
+    "description": "file upload component that you can use to upload files to your server",
+    "items": [
+      {
+        "name": "fileupload",
+        "type": "registry:ui",
+        "title": "fileupload",
+        "description": "file upload component that you can use to upload files to your server",
+        "dependencies": ["lucide-react"],
+        "files": [
+          {
+            "path": "src/components/fileupload.tsx",
+            "content": "",
+            "type": "registry:ui",
+            "target": ""
+          }
+        ]
+      }
+    ]
+  }
