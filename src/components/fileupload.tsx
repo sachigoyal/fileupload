@@ -76,7 +76,7 @@ function FileUpload({ accept = "*", onChange, className, children, ...props }: F
         onDragLeave={() => setIsDragging(false)}
         className={cn(
           "relative flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
-          isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50",
+          isDragging ? "border-blue-500 bg-blue-500/10" : "border-muted-foreground/25 hover:border-primary/50",
           className
         )}
         {...props}
@@ -145,7 +145,7 @@ function FileUploadContent({ children }: { children?: ReactNode }) {
           e.stopPropagation()
           clear()
         }}
-        className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-destructive text-destructive-foreground"
+        className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
       >
         <X className="size-3" />
       </button>
