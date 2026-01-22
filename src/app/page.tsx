@@ -9,7 +9,7 @@ import Link from "next/link"
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col max-w-xl mx-auto">
       <header className="top-2 right-4 gap-2 absolute flex items-center">
         <a
           href={siteConfig.socials.github}
@@ -19,7 +19,7 @@ export default function Home() {
         </a>
         <ModeToggle />
       </header>
-      <div className="flex flex-1 flex-col items-center justify-center max-w-xl mx-auto">
+      <div className="flex flex-1 flex-col items-center justify-center w-full">
         <div className="text-center flex flex-col gap-2">
           <h1 className="text-4xl font-bold">{siteConfig.name}</h1>
           <p className="text-muted-foreground max-w-sm">{siteConfig.description}</p>
