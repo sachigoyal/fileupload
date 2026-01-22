@@ -145,7 +145,7 @@ function FileUploadContent({ children }: { children?: ReactNode }) {
           e.stopPropagation()
           clear()
         }}
-        className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+        className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-muted/80 text-muted-foreground hover:bg-muted/90 transition-colors duration-200"
       >
         <X className="size-3" />
       </button>

@@ -19,15 +19,15 @@ export default function Home() {
         </a>
         <ModeToggle />
       </header>
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <div className="text-center flex flex-col gap-3">
-          <h1 className="text-4xl font-bold tracking-tight">{siteConfig.name}</h1>
-          <p className="text-muted-foreground">{siteConfig.description}</p>
+      <div className="flex flex-1 flex-col items-center justify-center max-w-xl mx-auto">
+        <div className="text-center flex flex-col gap-2">
+          <h1 className="text-4xl font-bold">{siteConfig.name}</h1>
+          <p className="text-muted-foreground max-w-sm">{siteConfig.description}</p>
         </div>
-        <FileUpload onChange={(f) => console.log(f)} className="w-full max-w-md  mt-10">
+        <FileUpload onChange={(f) => console.log(f)} className="w-full mt-10">
           <FileUploadContent />
         </FileUpload>
-        <div className="w-full max-w-md mt-10 flex flex-col gap-3">
+        <div className="w-full mt-10 flex flex-col gap-3">
           <h2 className="text-sm font-medium">Installation</h2>
           <Installation />
         </div>
